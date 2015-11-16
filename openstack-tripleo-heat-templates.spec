@@ -23,6 +23,8 @@ BuildRequires:	python-pbr
 
 Requires:	PyYAML
 
+#patches_base=0f2bf59+1
+
 %description
 OpenStack TripleO Heat Templates is a collection of templates and tools for
 building Heat Templates to do deployments of OpenStack.
