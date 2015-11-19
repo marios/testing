@@ -1,0 +1,236 @@
+From df7785dd9798d300c16e50772a573405c76b658b Mon Sep 17 00:00:00 2001
+From: rajinir <rajini_ram@dell.com>
+Date: Fri, 6 Nov 2015 15:28:16 -0600
+Subject: [PATCH] Enable Equallogic Backends in Cinder
+
+Enables support for configuring Cinder with a Dell
+Equallogic storage backend.
+This change adds all relevant parameters for:
+ - Equallogic PS-Series (iSCSI)
+
+Change-Id: Ia0f71863cfb12f2cdda43dcf707a9a7145963001
+
+Conflicts:
+	puppet/manifests/overcloud_controller.pp
+	puppet/manifests/overcloud_controller_pacemaker.pp
+---
+ environments/cinder-eqlx-config.yaml               | 17 +++++
+ puppet/controller.yaml                             |  1 +
+ .../pre_deploy/controller/cinder-eqlx.yaml         | 86 ++++++++++++++++++++++
+ puppet/manifests/overcloud_controller.pp           | 24 +++++-
+ puppet/manifests/overcloud_controller_pacemaker.pp | 24 +++++-
+ 5 files changed, 150 insertions(+), 2 deletions(-)
+ create mode 100644 environments/cinder-eqlx-config.yaml
+ create mode 100644 puppet/extraconfig/pre_deploy/controller/cinder-eqlx.yaml
+
+diff --git a/environments/cinder-eqlx-config.yaml b/environments/cinder-eqlx-config.yaml
+new file mode 100644
+index 0000000..ca2c5e5
+--- /dev/null
++++ b/environments/cinder-eqlx-config.yaml
+@@ -0,0 +1,17 @@
++# A Heat environment file which can be used to enable a
++# a Cinder  eqlx backen, configured via puppet
++resource_registry:
++  OS::TripleO::ControllerExtraConfigPre: ../puppet/extraconfig/pre_deploy/controller/cinder-eqlx.yaml
++
++parameter_defaults:
++  CinderEnableEqlxBackend: true
++  CinderEqlxBackendName: 'tripleo_eqlx'
++  CinderEqlxSanIp: ''
++  CinderEqlxSanLogin: ''
++  CinderEqlxSanPassword: ''
++  CinderEqlxSanThinProvision: true
++  CinderEqlxGroupname: 'group-0'
++  CinderEqlxPool: 'default'
++  CinderEqlxChapLogin: ''
++  CinderEqlxChapPassword: ''
++  CinderEqlxUseChap: false
+diff --git a/puppet/controller.yaml b/puppet/controller.yaml
+index fc19f07..0520133 100644
+--- a/puppet/controller.yaml
++++ b/puppet/controller.yaml
+@@ -990,6 +990,7 @@ resources:
+             - common
+             - cinder_dellsc_data # Optionally provided by ControllerExtraConfigPre
+             - cinder_netapp_data # Optionally provided by ControllerExtraConfigPre
++            - cinder_eqlx_data # Optionally provided by ControllerExtraConfigPre
+             - neutron_bigswitch_data # Optionally provided by ControllerExtraConfigPre
+             - neutron_cisco_data # Optionally provided by ControllerExtraConfigPre
+             - cisco_n1kv_data # Optionally provided by ControllerExtraConfigPre
+diff --git a/puppet/extraconfig/pre_deploy/controller/cinder-eqlx.yaml b/puppet/extraconfig/pre_deploy/controller/cinder-eqlx.yaml
+new file mode 100644
+index 0000000..c73608f
+--- /dev/null
++++ b/puppet/extraconfig/pre_deploy/controller/cinder-eqlx.yaml
+@@ -0,0 +1,86 @@
++heat_template_version: 2015-11-06
++
++description: Configure hieradata for Cinder Eqlx configuration
++
++parameters:
++  server:
++    description: ID of the controller node to apply this config to
++    type: string
++
++  # Config specific parameters, to be provided via parameter_defaults
++  CinderEnableEqlxBackend:
++    type: boolean
++    default: true
++  CinderEqlxBackendName:
++    type: string
++    default: 'tripleo_eqlx'
++  CinderEqlxSanIp:
++    type: string
++  CinderEqlxSanLogin:
++    type: string
++  CinderEqlxSanPassword:
++    type: string
++    hidden: true
++  CinderEqlxSanThinProvision:
++    type: boolean
++    default: true
++  CinderEqlxGroupname:
++    type: string
++    default: 'group-0'
++  CinderEqlxPool:
++    type: string
++    default: 'default'
++  CinderEqlxChapLogin:
++    type: string
++    default: ''
++  CinderEqlxChapPassword:
++    type: string
++    default: ''
++  CinderEqlxUseChap:
++    type: boolean
++    default: false
++
++resources:
++  CinderEqlxConfig:
++    type: OS::Heat::StructuredConfig
++    properties:
++      group: os-apply-config
++      config:
++        hiera:
++          datafiles:
++            cinder_eqlx_data:
++              mapped_data:
++                cinder_enable_eqlx_backend: {get_input: EnableEqlxBackend}
++                cinder::backend::eqlx::volume_backend_name: {get_input: EqlxBackendName}
++                cinder::backend::eqlx::san_ip: {get_input: EqlxSanIp}
++                cinder::backend::eqlx::san_login: {get_input: EqlxSanLogin}
++                cinder::backend::eqlx::san_password: {get_input: EqlxSanPassword}
++                cinder::backend::eqlx::san_thin_provision: {get_input: EqlxSanThinProvision}
++                cinder::backend::eqlx::eqlx_group_name: {get_input: EqlxGroupname}
++                cinder::backend::eqlx::eqlx_pool: {get_input: EqlxPool}
++                cinder::backend::eqlx::eqlx_use_chap: {get_input: EqlxUseChap}
++                cinder::backend::eqlx::eqlx_chap_login: {get_input: EqlxChapLogin}
++                cinder::backend::eqlx::eqlx_chap_password: {get_input: EqlxChapPassword}
++
++  CinderEqlxDeployment:
++    type: OS::Heat::StructuredDeployment
++    properties:
++      config: {get_resource: CinderEqlxConfig}
++      server: {get_param: server}
++      input_values:
++        EnableEqlxBackend: {get_param: CinderEnableEqlxBackend}
++        EqlxBackendName: {get_param: CinderEqlxBackendName}
++        EqlxSanIp: {get_param: CinderEqlxSanIp}
++        EqlxSanLogin: {get_param: CinderEqlxSanLogin}
++        EqlxSanPassword: {get_param: CinderEqlxSanPassword}
++        EqlxSanThinProvision: {get_param: CinderEqlxSanThinProvision}
++        EqlxGroupname: {get_param: CinderEqlxGroupname}
++        EqlxPool: {get_param: CinderEqlxPool}
++        EqlxUseChap: {get_param: CinderEqlxUseChap}
++        EqlxChapLogin: {get_param: CinderEqlxChapLogin}
++        EqlxChapPassword: {get_param: CinderEqlxChapPassword}
++
++outputs:
++  deploy_stdout:
++    description: Deployment reference, used to trigger puppet apply on changes
++    value: {get_attr: [CinderEqlxDeployment, deploy_stdout]}
+diff --git a/puppet/manifests/overcloud_controller.pp b/puppet/manifests/overcloud_controller.pp
+index 68cde31..d0d2d97 100644
+--- a/puppet/manifests/overcloud_controller.pp
++++ b/puppet/manifests/overcloud_controller.pp
+@@ -352,6 +352,27 @@ if hiera('step') >= 3 {
+     }
+   }
+
++  if hiera('cinder_enable_eqlx_backend', false) {
++    $cinder_eqlx_backend = hiera('cinder::backend::eqlx::volume_backend_name')
++
++    cinder_config {
++      "${cinder_eqlx_backend}/host": value => 'hostgroup';
++    }
++
++    cinder::backend::eqlx { $cinder_eqlx_backend :
++      volume_backend_name => hiera('cinder::backend::eqlx::volume_backend_name', undef),
++      san_ip              => hiera('cinder::backend::eqlx::san_ip', undef),
++      san_login           => hiera('cinder::backend::eqlx::san_login', undef),
++      san_password        => hiera('cinder::backend::eqlx::san_password', undef),
++      san_thin_provision  => hiera('cinder::backend::eqlx::san_thin_provision', undef),
++      eqlx_group_name     => hiera('cinder::backend::eqlx::eqlx_group_name', undef),
++      eqlx_pool           => hiera('cinder::backend::eqlx::eqlx_lpool', undef),
++      eqlx_use_chap       => hiera('cinder::backend::eqlx::eqlx_use_chap', undef),
++      eqlx_chap_login     => hiera('cinder::backend::eqlx::eqlx_chap_login', undef),
++      eqlx_chap_password  => hiera('cinder::backend::eqlx::eqlx_san_password', undef),
++    }
++  }
++
+   if hiera('cinder_enable_netapp_backend', false) {
+     $cinder_netapp_backend = hiera('cinder::backend::netapp::title')
+
+@@ -405,7 +426,8 @@ if hiera('step') >= 3 {
+     }
+   }
+
+-  $cinder_enabled_backends = delete_undef_values([$cinder_iscsi_backend, $cinder_rbd_backend, $cinder_dellsc_backend, $cinder_netapp_backend, $cinder_nfs_backend])
++  $cinder_enabled_backends = delete_undef_values([$cinder_iscsi_backend, $cinder_rbd_backend, $cinder_dellsc_backend, $cinder_eqlx_backend, $cinder_netapp_backend, $cinder_nfs_backend])
++
+   class { '::cinder::backends' :
+     enabled_backends => $cinder_enabled_backends,
+   }
+diff --git a/puppet/manifests/overcloud_controller_pacemaker.pp b/puppet/manifests/overcloud_controller_pacemaker.pp
+index bef0f4d..cfe4ea4 100644
+--- a/puppet/manifests/overcloud_controller_pacemaker.pp
++++ b/puppet/manifests/overcloud_controller_pacemaker.pp
+@@ -720,6 +720,27 @@ if hiera('step') >= 3 {
+     }
+   }
+
++  if hiera('cinder_enable_eqlx_backend', false) {
++    $cinder_eqlx_backend = hiera('cinder::backend::eqlx::volume_backend_name')
++
++    cinder_config {
++      "${cinder_eqlx_backend}/host": value => 'hostgroup';
++    }
++
++    cinder::backend::eqlx { $cinder_eqlx_backend :
++      volume_backend_name => hiera('cinder::backend::eqlx::volume_backend_name', undef),
++      san_ip              => hiera('cinder::backend::eqlx::san_ip', undef),
++      san_login           => hiera('cinder::backend::eqlx::san_login', undef),
++      san_password        => hiera('cinder::backend::eqlx::san_password', undef),
++      san_thin_provision  => hiera('cinder::backend::eqlx::san_thin_provision', undef),
++      eqlx_group_name     => hiera('cinder::backend::eqlx::eqlx_group_name', undef),
++      eqlx_pool           => hiera('cinder::backend::eqlx::eqlx_lpool', undef),
++      eqlx_use_chap       => hiera('cinder::backend::eqlx::eqlx_use_chap', undef),
++      eqlx_chap_login     => hiera('cinder::backend::eqlx::eqlx_chap_login', undef),
++      eqlx_chap_password  => hiera('cinder::backend::eqlx::eqlx_san_password', undef),
++    }
++  }
++
+   if hiera('cinder_enable_netapp_backend', false) {
+     $cinder_netapp_backend = hiera('cinder::backend::netapp::title')
+
+@@ -773,7 +794,8 @@ if hiera('step') >= 3 {
+     }
+   }
+
+-  $cinder_enabled_backends = delete_undef_values([$cinder_iscsi_backend, $cinder_rbd_backend, $cinder_dellsc_backend, $cinder_netapp_backend, $cinder_nfs_backend])
++  $cinder_enabled_backends = delete_undef_values([$cinder_iscsi_backend, $cinder_rbd_backend, $cinder_dellsc_backend, $cinder_netapp_backend, $cinder_nfs_backend, $cinder_eqlx_backend])
++
+   class { '::cinder::backends' :
+     enabled_backends => $cinder_enabled_backends,
+   }
