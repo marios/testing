@@ -7,12 +7,16 @@
 Name:		openstack-tripleo-heat-templates
 Summary:	Heat templates for TripleO
 Version:    0.8.7
-Release:    2%{?dist}
+Release:    3%{?dist}
 License:	ASL 2.0
 Group:		System Environment/Base
 URL:		https://wiki.openstack.org/wiki/TripleO
 # Once we have stable branches and stable releases we can go back to using release tarballs
 Source0:  https://github.com/openstack/%{service}/archive/%{commit0}.tar.gz#/%{service}-%{shortcommit0}.tar.gz
+
+#patches_base=0f2bf59+1
+Patch0001: 0001-Enable-Dell-Storage-Center-iscsi-Backends-in-Cinder.patch
+Patch0002: 0002-Enable-Equallogic-Backends-in-Cinder.patch
 
 BuildArch:	noarch
 BuildRequires:  git
@@ -23,9 +27,6 @@ BuildRequires:	python-pbr
 
 Requires:	PyYAML
 
-#patches_base=0f2bf59+1
-Patch0001: 0001-Enable-Dell-Storage-Center-iscsi-Backends-in-Cinder.patch
-Patch0002: 0002-Enable-Equallogic-Backends-in-Cinder.patch
 
 %description
 OpenStack TripleO Heat Templates is a collection of templates and tools for
@@ -63,6 +64,9 @@ fi
 %{_bindir}/tripleo-heat-merge
 
 %changelog
+* Thu Jan 21 2016 Lon Hohberger <lon@redhat.com> 0.8.7-3
+- Move patches around
+
 * Thu Nov 19 2015 Mike Burns <mburns@redhat.com> 0.8.7-2
 - Enable Equallogic Backends in Cinder
 - Enable Dell Storage Center iscsi Backends in Cinder
