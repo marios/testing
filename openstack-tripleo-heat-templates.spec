@@ -12,9 +12,9 @@ License:	ASL 2.0
 Group:		System Environment/Base
 URL:		https://wiki.openstack.org/wiki/TripleO
 # Once we have stable branches and stable releases we can go back to using release tarballs
-Source0:  https://github.com/openstack/%{service}/archive/%{commit0}.tar.gz#/%{service}-%{shortcommit0}.tar.gz
+Source0:  https://tarballs.openstack.org/%{service}/%{service}-%{version}.tar.gz
 
-#patches_base=0f2bf59+1
+#patches_base=+1
 Patch0001: 0001-Enable-Dell-Storage-Center-iscsi-Backends-in-Cinder.patch
 Patch0002: 0002-Enable-Equallogic-Backends-in-Cinder.patch
 
@@ -33,7 +33,7 @@ OpenStack TripleO Heat Templates is a collection of templates and tools for
 building Heat Templates to do deployments of OpenStack.
 
 %prep
-%autosetup -n %{service}-%{commit0} -S git
+%autosetup -n %{service}-%{version} -S git
 
 %build
 %{__python2} setup.py build
