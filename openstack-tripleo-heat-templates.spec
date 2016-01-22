@@ -45,6 +45,20 @@ building Heat Templates to do deployments of OpenStack.
 
 %prep
 %autosetup -n %{service}-%{version} -S git
+%patch0001 -p1
+%patch0002 -p1
+%patch0003 -p1
+%patch0004 -p1
+%patch0005 -p1
+%patch0006 -p1
+%patch0007 -p1
+%patch0008 -p1
+%patch0009 -p1
+%patch0010 -p1
+%patch0011 -p1
+%patch0012 -p1
+%patch0013 -p1
+
 
 %build
 %{__python2} setup.py build
