@@ -1,0 +1,37 @@
+From d1373b296260230a84bd9acc9e95a798df983613 Mon Sep 17 00:00:00 2001
+From: James Slagle <jslagle@redhat.com>
+Date: Mon, 14 Sep 2015 23:13:30 -0400
+Subject: [PATCH] Use KeystoneAdminApiVirtualIP for heat keystone domain admin
+ setup
+
+Since we have applied this patch downstream:
+https://review.openstack.org/#/c/180566/
+
+The patch we cherry picked for https://review.openstack.org/#/c/205349 is
+incomplete.
+
+We must also set heat::keystone::domain::auth_url to use
+KeystoneAdminApiVirtualIP
+
+Resolves: rhbz#1244026
+Change-Id: If3e97c39b4693fefa963f06c33b057dce10e3ecf
+(cherry picked from downstream commit 4f356032fa8a3e2d6dc4b041ac5ad822f7e2e638)
+Conflicts:
+	puppet/controller.yaml
+---
+ puppet/controller.yaml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/puppet/controller.yaml b/puppet/controller.yaml
+index b72328b..e1b8ded 100644
+--- a/puppet/controller.yaml
++++ b/puppet/controller.yaml
+@@ -1184,7 +1184,7 @@ resources:
+                 heat::database_connection: {get_input: heat_dsn}
+                 heat::debug: {get_input: debug}
+                 heat::db::mysql::password: {get_input: heat_password}
+-                heat::keystone::domain::auth_url: {get_input: keystone_public_url }
++                heat::keystone::domain::auth_url: {get_input: keystone_identity_uri}
+                 heat::keystone::domain::keystone_password: {get_input: admin_password}
+                 heat::keystone::domain::domain_password: {get_input: heat_stack_domain_admin_password}
+                 # Keystone

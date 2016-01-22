@@ -1,0 +1,27 @@
+From 49deff0a57a2ec8c4f876a3d791e51d7963b4e19 Mon Sep 17 00:00:00 2001
+From: Giulio Fidente <gfidente@redhat.com>
+Date: Wed, 18 Nov 2015 16:31:46 +0100
+Subject: [PATCH] Enable PrePuppet and PostPuppet by default
+
+Change-Id: I604ff032e2e714c0348bd763ebe0c65888852f61
+(cherry picked from downstream commit 800667a53aa307e5b8eab01b36c0b8ea59a2bafa)
+---
+ overcloud-resource-registry-puppet.yaml | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/overcloud-resource-registry-puppet.yaml b/overcloud-resource-registry-puppet.yaml
+index 2a26f50..8c8da99 100644
+--- a/overcloud-resource-registry-puppet.yaml
++++ b/overcloud-resource-registry-puppet.yaml
+@@ -24,8 +24,9 @@ resource_registry:
+ 
+   # Tasks (for internal TripleO usage)
+   OS::TripleO::Tasks::PackageUpdate: extraconfig/tasks/yum_update.yaml
+-  OS::TripleO::Tasks::ControllerPrePuppet: extraconfig/tasks/noop.yaml
+-  OS::TripleO::Tasks::ControllerPostPuppet: extraconfig/tasks/noop.yaml
++  # set to {pre,post}_puppet_pacemaker.yaml to set pcmk in maintenance mode
++  OS::TripleO::Tasks::ControllerPrePuppet: extraconfig/tasks/pre_puppet_pacemaker.yaml
++  OS::TripleO::Tasks::ControllerPostPuppet: extraconfig/tasks/post_puppet_pacemaker.yaml
+ 
+   # This creates the "heat-admin" user for all OS images by default
+   # To disable, replace with firstboot/userdata_default.yaml

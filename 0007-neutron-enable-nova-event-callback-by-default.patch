@@ -1,0 +1,110 @@
+From c5e4bdd1ddeeb97be81b11288b30aaeff71d2202 Mon Sep 17 00:00:00 2001
+From: Emilien Macchi <emilien@redhat.com>
+Date: Mon, 21 Sep 2015 13:46:02 -0400
+Subject: [PATCH] neutron: enable nova-event-callback by default
+
+* Add NovaApiVirtualIP string parameter.
+* Compute nova_url and nova_admin_auth_url parameters.
+* Configure in Hiera neutron::server::notifications::* parameters.
+* non-ha: include ::neutron::server::notifications
+* ha: include ::neutron::server::notifications and create orchestration
+* Set vif_plugging_is_fatal to True so we actually fail if Neutron is not
+  able to create the VIF during Nova server creation workflow.
+
+Change-Id: I02e41f87404e0030d488476680af2f6d45af94ff
+(cherry picked from downstream commit c6d2ea7e1c4117151d578a7f5bf4a13ba7ddc25d)
+Conflicts:
+	overcloud-without-mergepy.yaml
+	puppet/controller.yaml
+---
+ os-apply-config/controller.yaml                    | 3 +++
+ puppet/controller.yaml                             | 8 ++++++++
+ puppet/hieradata/common.yaml                       | 2 --
+ puppet/manifests/overcloud_controller.pp           | 1 +
+ puppet/manifests/overcloud_controller_pacemaker.pp | 1 +
+ 5 files changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/os-apply-config/controller.yaml b/os-apply-config/controller.yaml
+index 6331e5d..aed2367 100644
+--- a/os-apply-config/controller.yaml
++++ b/os-apply-config/controller.yaml
+@@ -558,6 +558,9 @@ parameters:
+   NeutronApiVirtualIP:
+     type: string
+     default: ''
++  NovaApiVirtualIP:
++    type: string
++    default: ''
+   ServiceNetMap:
+     default: {}
+     description: Mapping of service_name -> network name. Typically set
+diff --git a/puppet/controller.yaml b/puppet/controller.yaml
+index f35ce01..be4dd2e 100644
+--- a/puppet/controller.yaml
++++ b/puppet/controller.yaml
+@@ -474,6 +474,9 @@ parameters:
+     default: false
+     description: Should MongoDb journaling be disabled
+     type: boolean
++  NovaApiVirtualIP:
++    type: string
++    default: ''
+   NtpServer:
+     default: ''
+     description: Comma-separated list of ntp servers
+@@ -953,6 +956,7 @@ resources:
+         neutron_public_url: { get_param: [ EndpointMap, NeutronPublic, uri ] }
+         neutron_admin_url: { get_param: [ EndpointMap, NeutronAdmin, uri ] }
+         neutron_admin_auth_url: { get_param: [ EndpointMap, KeystoneAdmin, uri_no_suffix ] }
++        nova_internal_url: { get_param: [ EndpointMap, NovaInternal, uri ] }
+         ceilometer_backend: {get_param: CeilometerBackend}
+         ceilometer_metering_secret: {get_param: CeilometerMeteringSecret}
+         ceilometer_password: {get_param: CeilometerPassword}
+@@ -1258,6 +1262,10 @@ resources:
+                 neutron::agents::metadata::auth_url: {get_input: keystone_identity_uri}
+                 neutron::db::mysql::password: {get_input: neutron_password}
+                 neutron::server::notifications::project_name: 'service'
++                neutron::server::notifications::nova_url: {get_input: nova_internal_url}
++                neutron::server::notifications::auth_url: {get_input: neutron_admin_auth_url}
++                neutron::server::notifications::tenant_name: 'service'
++                neutron::server::notifications::password: {get_input: nova_password}
+ 
+                 # Ceilometer
+                 ceilometer_backend: {get_input: ceilometer_backend}
+diff --git a/puppet/hieradata/common.yaml b/puppet/hieradata/common.yaml
+index 657f51f..b4b51ab 100644
+--- a/puppet/hieradata/common.yaml
++++ b/puppet/hieradata/common.yaml
+@@ -10,8 +10,6 @@ ceilometer::agent::auth::auth_tenant_name: 'admin'
+ nova::api::admin_tenant_name: 'service'
+ nova::network::neutron::neutron_admin_tenant_name: 'service'
+ nova::network::neutron::neutron_admin_username: 'neutron'
+-nova::network::neutron::vif_plugging_is_fatal: false
+-nova::network::neutron::vif_plugging_timeout: 30
+ nova::network::neutron::dhcp_domain: ''
+ 
+ neutron::allow_overlapping_ips: true
+diff --git a/puppet/manifests/overcloud_controller.pp b/puppet/manifests/overcloud_controller.pp
+index bf36c44..d7c8c9d 100644
+--- a/puppet/manifests/overcloud_controller.pp
++++ b/puppet/manifests/overcloud_controller.pp
+@@ -230,6 +230,7 @@ if hiera('step') >= 3 {
+ 
+   include ::neutron
+   include ::neutron::server
++  include ::neutron::server::notifications
+   include ::neutron::agents::l3
+   include ::neutron::agents::dhcp
+   include ::neutron::agents::metadata
+diff --git a/puppet/manifests/overcloud_controller_pacemaker.pp b/puppet/manifests/overcloud_controller_pacemaker.pp
+index 009813e..39a3734 100644
+--- a/puppet/manifests/overcloud_controller_pacemaker.pp
++++ b/puppet/manifests/overcloud_controller_pacemaker.pp
+@@ -598,6 +598,7 @@ if hiera('step') >= 3 {
+     manage_service => false,
+     enabled        => false,
+   }
++  include ::neutron::server::notifications
+   class { '::neutron::agents::dhcp' :
+     manage_service => false,
+     enabled        => false,

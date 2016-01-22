@@ -1,0 +1,113 @@
+From bd855c9f934f3a43b51f21f3660b32035d50ceb8 Mon Sep 17 00:00:00 2001
+From: James Slagle <jslagle@redhat.com>
+Date: Mon, 14 Dec 2015 08:01:55 -0500
+Subject: [PATCH] Align template defaults with the client
+
+This aligns the parameter default values from
+python-rdomanager-oscplugin with tripleo-heat-templates. This is in
+preparation for removing all the defaults from the client, and
+maintaining them only in the templates.
+
+Change-Id: I44dc7329b909a862a426ce62d9fc11a434f346e1
+(cherry picked from downstream commit 04701bd493172e12da4914038b8b62e394ac7466)
+Resolves: rhbz#1290574
+Conflicts:
+	overcloud-without-mergepy.yaml
+---
+ overcloud.yaml | 19 +++++++++++--------
+ 1 file changed, 11 insertions(+), 8 deletions(-)
+
+diff --git a/overcloud.yaml b/overcloud.yaml
+index 8a98522..a42affd 100644
+--- a/overcloud.yaml
++++ b/overcloud.yaml
+@@ -68,7 +68,7 @@ parameters:
+     description: Whether to enable or not the Rbd backend for Cinder
+     type: boolean
+   CloudName:
+-    default: ''
++    default: overcloud
+     description: The DNS name of this cloud. E.g. ci-overcloud.tripleo.org
+     type: string
+   ControlFixedIPs:
+@@ -324,7 +324,7 @@ parameters:
+     type: string
+     hidden: true
+   CinderISCSIHelper:
+-    default: tgtadm
++    default: lioadm
+     description: The iSCSI helper to use with cinder.
+     type: string
+   ControllerCount:
+@@ -340,11 +340,12 @@ parameters:
+     type: json
+   controllerImage:
+     type: string
+-    default: overcloud-control
++    default: overcloud-full
+     constraints:
+       - custom_constraint: glance.image
+   OvercloudControlFlavor:
+     description: Flavor for control nodes to request when deploying.
++    default: baremetal
+     type: string
+     constraints:
+       - custom_constraint: nova.flavor
+@@ -563,7 +564,7 @@ parameters:
+     description: What interface to add to the HypervisorNeutronPhysicalBridge.
+     type: string
+   NeutronNetworkVLANRanges:
+-    default: 'datacentre'
++    default: 'datacentre:1:1000'
+     description: >
+       The Neutron ML2 and OpenVSwitch vlan mapping range to support. See the
+       Neutron documentation for permitted values. Defaults to permitting any
+@@ -579,7 +580,7 @@ parameters:
+       structure as ExtraConfig.
+     type: json
+   NovaComputeLibvirtType:
+-    default: ''
++    default: kvm
+     type: string
+   NovaComputeLibvirtVifDriver:
+     default: ''
+@@ -591,7 +592,7 @@ parameters:
+     type: boolean
+   NovaImage:
+     type: string
+-    default: overcloud-compute
++    default: overcloud-full
+     constraints:
+       - custom_constraint: glance.image
+   NovaOVSBridge:
+@@ -604,6 +605,7 @@ parameters:
+     type: string
+   OvercloudComputeFlavor:
+     description: Use this flavor
++    default: baremetal
+     type: string
+     constraints:
+       - custom_constraint: nova.flavor
+@@ -666,11 +668,12 @@ parameters:
+     default: 0
+   OvercloudSwiftStorageFlavor:
+     description: Flavor for Swift storage nodes to request when deploying.
++    default: baremetal
+     type: string
+     constraints:
+       - custom_constraint: nova.flavor
+   SwiftStorageImage:
+-    default: overcloud-swift-storage
++    default: overcloud-full
+     type: string
+   ObjectStorageExtraConfig:
+     default: {}
+@@ -685,7 +688,7 @@ parameters:
+     type: number
+     default: 0
+   CephStorageImage:
+-    default: overcloud-ceph-storage
++    default: overcloud-full
+     type: string
+   OvercloudCephStorageFlavor:
+     default: baremetal

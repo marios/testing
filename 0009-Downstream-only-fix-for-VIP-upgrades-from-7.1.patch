@@ -1,0 +1,144 @@
+From 3a946ab6ed7fff8c7a89f27be70d027c1ebd9fb0 Mon Sep 17 00:00:00 2001
+From: Giulio Fidente <gfidente@redhat.com>
+Date: Tue, 24 Nov 2015 21:09:34 +0100
+Subject: [PATCH] Downstream only fix for VIP upgrades from 7.1
+
+In 7.1 we used to map VIPs to vip.yaml and pass a NetworkName to
+select the network where the VipPort resource was to be created,
+that never landed upstream but we need to continue do this
+downstream to support upgrades from 7.1 deployments.
+
+Change-Id: I71650a9c5db36d9f98abdfc195cfd2e649038679
+(cherry pick from downstream commit b7df4eb7ce08a9fe68f9903ad4b61f316ae6b2e6)
+Conflicts:
+	overcloud-without-mergepy.yaml
+---
+ environments/updates/update-from-vip.yaml | 1 +
+ network/ports/external.yaml               | 4 ++++
+ network/ports/internal_api.yaml           | 4 ++++
+ network/ports/storage.yaml                | 4 ++++
+ network/ports/storage_mgmt.yaml           | 4 ++++
+ network/ports/tenant.yaml                 | 4 ++++
+ overcloud.yaml                            | 4 ++++
+ 7 files changed, 25 insertions(+)
+
+diff --git a/environments/updates/update-from-vip.yaml b/environments/updates/update-from-vip.yaml
+index 3b4b5ec..acc921e 100644
+--- a/environments/updates/update-from-vip.yaml
++++ b/environments/updates/update-from-vip.yaml
+@@ -5,3 +5,4 @@ resource_registry:
+   OS::TripleO::Network::Ports::StorageVipPort: ../../network/ports/vip.yaml
+   OS::TripleO::Network::Ports::StorageMgmtVipPort: ../../network/ports/vip.yaml
+   OS::TripleO::Network::Ports::TenantVipPort: ../../network/ports/vip.yaml
++  OS::TripleO::Network::Ports::CtlplaneVipPort: ../../network/ports/ctlplane_vip.yaml
+diff --git a/network/ports/external.yaml b/network/ports/external.yaml
+index 7f33b99..12ffe9e 100644
+--- a/network/ports/external.yaml
++++ b/network/ports/external.yaml
+@@ -33,6 +33,10 @@ parameters:
+   NodeIndex: # Here for compatibility with from_pool.yaml
+     default: 0
+     type: number
++  NetworkName:
++    description: # Here for compatibility with vip.yaml
++    default: external
++    type: string
+ 
+ resources:
+ 
+diff --git a/network/ports/internal_api.yaml b/network/ports/internal_api.yaml
+index a7ab9c6..eb64ff0 100644
+--- a/network/ports/internal_api.yaml
++++ b/network/ports/internal_api.yaml
+@@ -22,6 +22,10 @@ parameters:
+   NodeIndex: # Here for compatibility with from_pool.yaml
+     default: 0
+     type: number
++  NetworkName:
++    description: # Here for compatibility with vip.yaml
++    default: internal_api
++    type: string
+ 
+ resources:
+ 
+diff --git a/network/ports/storage.yaml b/network/ports/storage.yaml
+index 27f19d0..3a10fdb 100644
+--- a/network/ports/storage.yaml
++++ b/network/ports/storage.yaml
+@@ -22,6 +22,10 @@ parameters:
+   NodeIndex: # Here for compatibility with from_pool.yaml
+     default: 0
+     type: number
++  NetworkName:
++    description: # Here for compatibility with vip.yaml
++    default: storage
++    type: string
+ 
+ resources:
+ 
+diff --git a/network/ports/storage_mgmt.yaml b/network/ports/storage_mgmt.yaml
+index f9d00f5..539df7c 100644
+--- a/network/ports/storage_mgmt.yaml
++++ b/network/ports/storage_mgmt.yaml
+@@ -22,6 +22,10 @@ parameters:
+   NodeIndex: # Here for compatibility with from_pool.yaml
+     default: 0
+     type: number
++  NetworkName:
++    description: # Here for compatibility with vip.yaml
++    default: storage_mgmt
++    type: string
+ 
+ resources:
+ 
+diff --git a/network/ports/tenant.yaml b/network/ports/tenant.yaml
+index b3b988b..6994e93 100644
+--- a/network/ports/tenant.yaml
++++ b/network/ports/tenant.yaml
+@@ -22,6 +22,10 @@ parameters:
+   NodeIndex: # Here for compatibility with from_pool.yaml
+     default: 0
+     type: number
++  NetworkName:
++    description: # Here for compatibility with vip.yaml
++    default: tenant
++    type: string
+ 
+ resources:
+ 
+diff --git a/overcloud.yaml b/overcloud.yaml
+index a42affd..37a7ae7 100644
+--- a/overcloud.yaml
++++ b/overcloud.yaml
+@@ -1198,6 +1198,7 @@ resources:
+       ControlPlaneNetwork: {get_param: NeutronControlPlaneID}
+       PortName: public_virtual_ip
+       FixedIPs: {get_param: PublicVirtualFixedIPs}
++      NetworkName: external
+ 
+   InternalApiVirtualIP:
+     depends_on: Networks
+@@ -1205,6 +1206,7 @@ resources:
+     properties:
+       ControlPlaneIP: {get_attr: [ControlVirtualIP, fixed_ips, 0, ip_address]}
+       PortName: internal_api_virtual_ip
++      NetworkName: external
+ 
+   StorageVirtualIP:
+     depends_on: Networks
+@@ -1212,6 +1214,7 @@ resources:
+     properties:
+       ControlPlaneIP: {get_attr: [ControlVirtualIP, fixed_ips, 0, ip_address]}
+       PortName: storage_virtual_ip
++      NetworkName: external
+ 
+   StorageMgmtVirtualIP:
+     depends_on: Networks
+@@ -1219,6 +1222,7 @@ resources:
+     properties:
+       ControlPlaneIP: {get_attr: [ControlVirtualIP, fixed_ips, 0, ip_address]}
+       PortName: storage_management_virtual_ip
++      NetworkName: external
+ 
+   VipMap:
+     type: OS::TripleO::Network::Ports::NetVipMap

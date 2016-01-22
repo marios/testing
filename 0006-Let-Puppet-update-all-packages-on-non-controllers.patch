@@ -1,0 +1,52 @@
+From df418de5d66bd35d62141c2a767c401b7ee32897 Mon Sep 17 00:00:00 2001
+From: James Slagle <jslagle@redhat.com>
+Date: Fri, 15 Jan 2016 13:52:03 -0500
+Subject: [PATCH] Let Puppet update all packages on non-controllers
+
+With I02f7cf07792765359f19fdf357024d9e48690e42[1] in puppet-tripleo,
+puppet is capable of updating all packages itself on non controller
+nodes now.
+
+This is a safer mechanism than using the exclude logic in yum_update.sh
+since that can cause depdency problems across sub packages.
+
+[1] https://review.openstack.org/#/c/261041/
+Closes-Bug: 1534785
+
+Change-Id: I9075a1bb85baa65a9d0afc5d0fd31a1f99a98819
+(cherry picked from upstream commit 4923ce769c228a3e094bd7aa96907a7ea9c49e9f)
+---
+ extraconfig/tasks/yum_update.sh | 13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
+
+diff --git a/extraconfig/tasks/yum_update.sh b/extraconfig/tasks/yum_update.sh
+index e32369e..fd87840 100755
+--- a/extraconfig/tasks/yum_update.sh
++++ b/extraconfig/tasks/yum_update.sh
+@@ -146,11 +146,11 @@ openstack-nova-scheduler"
+     kill $(ps ax | grep -e "keepalived.*\.pid-vrrp" | awk '{print $1}') 2>/dev/null || :
+     kill $(ps ax | grep -e "radvd.*\.pid\.radvd" | awk '{print $1}') 2>/dev/null || :
+ else
+-    echo "Excluding upgrading packages that are handled by config management tooling"
+-    command_arguments="$command_arguments --skip-broken"
+-    for exclude in $(cat /var/lib/tripleo/installed-packages/* | sort -u); do
+-        command_arguments="$command_arguments --exclude $exclude"
+-    done
++    echo "Upgrading openstack-puppet-modules"
++    yum -y update openstack-puppet-modules
++    echo "Upgrading other packages is handled by config management tooling"
++    echo -n "true" > $heat_outputs_path.update_managed_packages
++    exit 0
+ fi
+ 
+ command=${command:-update}
+@@ -189,9 +189,6 @@ if [[ "$pacemaker_status" == "active" ]] ; then
+     done
+ 
+     pcs status
+-
+-else
+-    echo -n "true" > $heat_outputs_path.update_managed_packages
+ fi
+ 
+ echo "Finished yum_update.sh on server $deploy_server_id at `date`"

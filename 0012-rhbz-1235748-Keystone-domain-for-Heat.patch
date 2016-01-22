@@ -1,0 +1,190 @@
+From c7bcea9a1f4359eace58f937bf9f92d00d491647 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Martin=20M=C3=A1gr?= <mmagr@redhat.com>
+Date: Mon, 2 Mar 2015 11:04:20 +0100
+Subject: [PATCH] rhbz#1235748 : Keystone domain for Heat
+
+This patch adds support for configuring Keystone domain for Heat
+via heat-keystone-setup-domain script. It should be reverted
+as soon as Keystone v3 is fully functional.
+
+This patch won't be fully functional without either python-keystoneclient
+fix [1] or workaround [2].
+
+[1] https://bugs.launchpad.net/python-keystoneclient/+bug/1452298
+[2] https://review.openstack.org/180563
+
+Change-Id: Ie9cdd518b299c141f0fdbb3441a7761c27321a88
+(cherry picked from downstream commit 7afbf2a57df1526d6ce81eab04b3e85ca01195fc)
+Conflicts:
+	overcloud-without-mergepy.yaml
+	puppet/controller-post.yaml
+	puppet/controller.yaml
+	puppet/hieradata/controller.yaml
+	puppet/manifests/overcloud_controller.pp
+	puppet/manifests/overcloud_controller_pacemaker.pp
+---
+ deprecated/overcloud-source.yaml                   |  4 ++--
+ deprecated/undercloud-source.yaml                  |  4 ++--
+ os-apply-config/controller.yaml                    |  4 ++--
+ overcloud.yaml                                     |  4 ++--
+ puppet/controller.yaml                             |  9 ++++++---
+ puppet/hieradata/controller.yaml                   |  8 ++++++++
+ puppet/manifests/overcloud_controller.pp           |  7 ++++++-
+ puppet/manifests/overcloud_controller_pacemaker.pp | 10 ++++++++++
+ 8 files changed, 38 insertions(+), 12 deletions(-)
+
+diff --git a/deprecated/overcloud-source.yaml b/deprecated/overcloud-source.yaml
+index 0729b33..20a94da 100644
+--- a/deprecated/overcloud-source.yaml
++++ b/deprecated/overcloud-source.yaml
+@@ -142,9 +142,9 @@ parameters:
+     type: string
+     hidden: true
+   HeatStackDomainAdminPassword:
+-    description: Password for heat_domain_admin user.
++    default: unset
++    description: Password for heat_stack_domain_admin user.
+     type: string
+-    default: ''
+     hidden: true
+   HypervisorNeutronPhysicalBridge:
+     default: 'br-ex'
+diff --git a/deprecated/undercloud-source.yaml b/deprecated/undercloud-source.yaml
+index 317896d..5853746 100644
+--- a/deprecated/undercloud-source.yaml
++++ b/deprecated/undercloud-source.yaml
+@@ -131,9 +131,9 @@ parameters:
+     type: string
+     hidden: true
+   HeatStackDomainAdminPassword:
+-    description: Password for heat_domain_admin user.
++    default: unset
++    description: Password for heat_stack_domain_admin user.
+     type: string
+-    default: ''
+     hidden: true
+   ImageUpdatePolicy:
+     default: REBUILD_PRESERVE_EPHEMERAL
+diff --git a/os-apply-config/controller.yaml b/os-apply-config/controller.yaml
+index aed2367..503dbd7 100644
+--- a/os-apply-config/controller.yaml
++++ b/os-apply-config/controller.yaml
+@@ -208,9 +208,9 @@ parameters:
+     type: string
+     hidden: true
+   HeatStackDomainAdminPassword:
+-    description: Password for heat_domain_admin user.
++    default: unset
++    description: Password for heat_stack_domain_admin user.
+     type: string
+-    default: ''
+     hidden: true
+   HeatAuthEncryptionKey:
+     description: Auth encryption key for heat-engine
+diff --git a/overcloud.yaml b/overcloud.yaml
+index 37a7ae7..54f992f 100644
+--- a/overcloud.yaml
++++ b/overcloud.yaml
+@@ -434,9 +434,9 @@ parameters:
+     type: string
+     hidden: true
+   HeatStackDomainAdminPassword:
+-    description: Password for heat_domain_admin user.
++    default: unset
++    description: Password for heat_stack_domain_admin user.
+     type: string
+-    default: ''
+     hidden: true
+   InstanceNameTemplate:
+     default: 'instance-%08x'
+diff --git a/puppet/controller.yaml b/puppet/controller.yaml
+index be4dd2e..b72328b 100644
+--- a/puppet/controller.yaml
++++ b/puppet/controller.yaml
+@@ -219,9 +219,9 @@ parameters:
+     type: string
+     hidden: true
+   HeatStackDomainAdminPassword:
+-    description: Password for heat_domain_admin user.
++    default: unset
++    description: Password for heat_stack_domain_admin user.
+     type: string
+-    default: ''
+     hidden: true
+   HeatAuthEncryptionKey:
+     description: Auth encryption key for heat-engine
+@@ -1184,8 +1184,11 @@ resources:
+                 heat::database_connection: {get_input: heat_dsn}
+                 heat::debug: {get_input: debug}
+                 heat::db::mysql::password: {get_input: heat_password}
+-
++                heat::keystone::domain::auth_url: {get_input: keystone_public_url }
++                heat::keystone::domain::keystone_password: {get_input: admin_password}
++                heat::keystone::domain::domain_password: {get_input: heat_stack_domain_admin_password}
+                 # Keystone
++                keystone::roles::admin::password: {get_input: admin_password}
+                 keystone::admin_token: {get_input: admin_token}
+                 keystone_ca_certificate: {get_input: keystone_ca_certificate}
+                 keystone_signing_key: {get_input: keystone_signing_key}
+diff --git a/puppet/hieradata/controller.yaml b/puppet/hieradata/controller.yaml
+index f4186b5..215d420 100644
+--- a/puppet/hieradata/controller.yaml
++++ b/puppet/hieradata/controller.yaml
+@@ -1,4 +1,8 @@
++
+ # Hiera data here applies to all controller nodes
++keystone::roles::admin::email: 'root@localhost'
++keystone::roles::admin::admin_tenant: 'admin'
++
+ nova::api::enabled: true
+ nova::conductor::enabled: true
+ nova::consoleauth::enabled: true
+@@ -82,6 +86,10 @@ cinder::scheduler::scheduler_driver: cinder.scheduler.filter_scheduler.FilterSch
+ heat::engine::configure_delegated_roles: false
+ heat::engine::trusts_delegated_roles: []
+ heat::instance_user: ''
++heat::keystone::domain::keystone_admin: 'admin'
++heat::keystone::domain::keystone_tenant: 'admin'
++heat::keystone::domain::domain_name: 'heat_stack'
++heat::keystone::domain::domain_admin: 'heat_stack_domain_admin'
+ 
+ # pacemaker
+ pacemaker::corosync::cluster_name: 'tripleo_cluster'
+diff --git a/puppet/manifests/overcloud_controller.pp b/puppet/manifests/overcloud_controller.pp
+index d7c8c9d..0407887 100644
+--- a/puppet/manifests/overcloud_controller.pp
++++ b/puppet/manifests/overcloud_controller.pp
+@@ -543,7 +543,12 @@ if hiera('step') >= 3 {
+ 
+ if hiera('step') >= 4 {
+   include ::keystone::cron::token_flush
+-} #END STEP 4
++  include ::keystone::roles::admin
++
++  # TO-DO: Remove this class as soon as Keystone v3 will be fully functional
++  include ::heat::keystone::domain
++  Class['::keystone::roles::admin'] -> Exec['heat_domain_create']
+ 
++} #END STEP 4
+ $package_manifest_name = join(['/var/lib/tripleo/installed-packages/overcloud_controller', hiera('step')])
+ package_manifest{$package_manifest_name: ensure => present}
+diff --git a/puppet/manifests/overcloud_controller_pacemaker.pp b/puppet/manifests/overcloud_controller_pacemaker.pp
+index 39a3734..bbe9ac5 100644
+--- a/puppet/manifests/overcloud_controller_pacemaker.pp
++++ b/puppet/manifests/overcloud_controller_pacemaker.pp
+@@ -1622,5 +1622,15 @@ if hiera('step') >= 4 {
+ 
+ } #END STEP 4
+ 
++if hiera('step') >= 5 {
++  include ::keystone::roles::admin
++
++  # TO-DO: Remove this class as soon as Keystone v3 will be fully functional
++  include ::heat::keystone::domain
++  Class['::keystone::roles::admin'] -> Exec['heat_domain_create']
++
++} #END STEP 5
++
++
+ $package_manifest_name = join(['/var/lib/tripleo/installed-packages/overcloud_controller_pacemaker', hiera('step')])
+ package_manifest{$package_manifest_name: ensure => present}

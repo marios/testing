@@ -7,7 +7,7 @@
 Name:		openstack-tripleo-heat-templates
 Summary:	Heat templates for TripleO
 Version:    0.8.7
-Release:    3%{?dist}
+Release:    4%{?dist}
 License:	ASL 2.0
 Group:		System Environment/Base
 URL:		https://wiki.openstack.org/wiki/TripleO
@@ -17,6 +17,17 @@ Source0:  https://tarballs.openstack.org/%{service}/%{service}-%{version}.tar.gz
 #patches_base=+1
 Patch0001: 0001-Enable-Dell-Storage-Center-iscsi-Backends-in-Cinder.patch
 Patch0002: 0002-Enable-Equallogic-Backends-in-Cinder.patch
+Patch0003: 0003-Add-update-yaml-backward-compatibe-with-PublicVirtua.patch
+Patch0004: 0004-Align-template-defaults-with-the-client.patch
+Patch0005: 0005-Fix-nova.conf-and-neutron.conf-to-support-Nova-Neutr.patch
+Patch0006: 0006-Let-Puppet-update-all-packages-on-non-controllers.patch
+Patch0007: 0007-neutron-enable-nova-event-callback-by-default.patch
+Patch0008: 0008-Add-update-environment-directory-and-sample-file.patch
+Patch0009: 0009-Downstream-only-fix-for-VIP-upgrades-from-7.1.patch
+Patch0010: 0010-Enable-pacemaker-by-default-for-RDO-Manager.patch
+Patch0011: 0011-Enable-PrePuppet-and-PostPuppet-by-default.patch
+Patch0012: 0012-rhbz-1235748-Keystone-domain-for-Heat.patch
+Patch0013: 0013-Use-KeystoneAdminApiVirtualIP-for-heat-keystone-doma.patch
 
 BuildArch:	noarch
 BuildRequires:  git
@@ -64,6 +75,9 @@ fi
 %{_bindir}/tripleo-heat-merge
 
 %changelog
+* Fri Jan 22 2016 marios <marios@redhat.com> 0.8.7-4
+- Update to 0.8.7
+
 * Thu Jan 21 2016 Lon Hohberger <lon@redhat.com> 0.8.7-3
 - Move patches around
 

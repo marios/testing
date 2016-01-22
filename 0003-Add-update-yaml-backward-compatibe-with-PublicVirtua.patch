@@ -1,0 +1,46 @@
+From b0f94cc0da7a55e96cc7cf2974f6f214b7d83397 Mon Sep 17 00:00:00 2001
+From: Giulio Fidente <gfidente@redhat.com>
+Date: Mon, 14 Dec 2015 23:38:57 +0100
+Subject: [PATCH] Add update yaml backward compatibe with PublicVirtualIP on
+ ctlplane
+
+In previous releases, when not using network isolation, we used to create
+two different VIPs for the ControlVirtualIP and the PublicVirtualIP both on
+the ctlplane network. Later we moved into a configuration with a single
+VIP instead so we need a compatibility yaml for those updating from old
+versions which preserves both the IPs; one of the two is deleted
+otherwise.
+
+Also updates README.md with a short description of the use case.
+
+Change-Id: Iae08b938a255bf563d3df2fdc0748944a9868f8e
+(cherry picked from downstream commit 563abe7a8128ad34028484f2118042663ff925b1)
+Conflicts:
+	environments/updates/README.md
+---
+ environments/updates/README.md                              | 3 +++
+ environments/updates/update-from-publicvip-on-ctlplane.yaml | 2 ++
+ 2 files changed, 5 insertions(+)
+ create mode 100644 environments/updates/update-from-publicvip-on-ctlplane.yaml
+
+diff --git a/environments/updates/README.md b/environments/updates/README.md
+index 8c03411..ceba1cd 100644
+--- a/environments/updates/README.md
++++ b/environments/updates/README.md
+@@ -7,3 +7,6 @@ Contents
+ **update-from-keystone-admin-internal-api.yaml**
+   To be used if the Keystone Admin API was originally deployed on the
+   Internal API network.
++
++**update-from-publicvip-on-ctlplane.yaml**
++  To be used if the PublicVirtualIP resource was deployed as an additional VIP on the 'ctlplane'.
+\ No newline at end of file
+diff --git a/environments/updates/update-from-publicvip-on-ctlplane.yaml b/environments/updates/update-from-publicvip-on-ctlplane.yaml
+new file mode 100644
+index 0000000..c62428b
+--- /dev/null
++++ b/environments/updates/update-from-publicvip-on-ctlplane.yaml
+@@ -0,0 +1,2 @@
++resource_registry:
++  OS::TripleO::Network::Ports::ExternalVipPort: ../../network/ports/ctlplane_vip.yaml
+\ No newline at end of file

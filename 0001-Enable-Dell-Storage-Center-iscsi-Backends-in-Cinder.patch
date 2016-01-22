@@ -1,4 +1,4 @@
-From cc55c85d8544cb613ad3ab0418c0a8f1d4792127 Mon Sep 17 00:00:00 2001
+From 2733ffab407c416b5906350ba6f7dd5caf8304b7 Mon Sep 17 00:00:00 2001
 From: rajinir <rajini_ram@dell.com>
 Date: Thu, 12 Nov 2015 16:50:39 -0600
 Subject: [PATCH] Enable Dell Storage Center iscsi Backends in Cinder
@@ -9,6 +9,7 @@ This change adds all relevant parameters for:
  - Dell Storage Center SC Series (iSCSI)
 
 Change-Id: I3b1a4346f494139ab123c7dc1a62f81d03c9e728
+(cherry picked from downstream commit cc55c85d8544cb613ad3ab0418c0a8f1d4792127)
 ---
  environments/cinder-dellsc-config.yaml             | 17 +++++
  puppet/controller.yaml                             |  1 +
@@ -43,10 +44,10 @@ index 0000000..92e257d
 +  CinderDellScServerFolder: 'dellsc_server'
 +  CinderDellScVolumeFolder: 'dellsc_volume'
 diff --git a/puppet/controller.yaml b/puppet/controller.yaml
-index 0bb8035..fc19f07 100644
+index 64e14cd..7328ffb 100644
 --- a/puppet/controller.yaml
 +++ b/puppet/controller.yaml
-@@ -988,6 +988,7 @@ resources:
+@@ -1058,6 +1058,7 @@ resources:
              - vip_data # provided by vip-config
              - '"%{::osfamily}"'
              - common
@@ -148,13 +149,13 @@ index 0000000..905f196
 +    description: Deployment reference, used to trigger puppet apply on changes
 +    value: {get_attr: [CinderDellScDeployment, deploy_stdout]}
 diff --git a/puppet/manifests/overcloud_controller.pp b/puppet/manifests/overcloud_controller.pp
-index c330236..68cde31 100644
+index 3a752f8..434dbc7 100644
 --- a/puppet/manifests/overcloud_controller.pp
 +++ b/puppet/manifests/overcloud_controller.pp
-@@ -331,6 +331,27 @@ if hiera('step') >= 3 {
+@@ -347,6 +347,27 @@ if hiera('step') >= 3 {
      }
    }
-
+ 
 +  if hiera('cinder_enable_dellsc_backend', false) {
 +    $cinder_dellsc_backend = hiera('cinder::backend::dellsc_iscsi::volume_backend_name')
 +
@@ -178,24 +179,24 @@ index c330236..68cde31 100644
 +
    if hiera('cinder_enable_netapp_backend', false) {
      $cinder_netapp_backend = hiera('cinder::backend::netapp::title')
-
-@@ -384,7 +405,7 @@ if hiera('step') >= 3 {
+ 
+@@ -400,7 +421,7 @@ if hiera('step') >= 3 {
      }
    }
-
+ 
 -  $cinder_enabled_backends = delete_undef_values([$cinder_iscsi_backend, $cinder_rbd_backend, $cinder_netapp_backend, $cinder_nfs_backend])
 +  $cinder_enabled_backends = delete_undef_values([$cinder_iscsi_backend, $cinder_rbd_backend, $cinder_dellsc_backend, $cinder_netapp_backend, $cinder_nfs_backend])
    class { '::cinder::backends' :
      enabled_backends => $cinder_enabled_backends,
    }
 diff --git a/puppet/manifests/overcloud_controller_pacemaker.pp b/puppet/manifests/overcloud_controller_pacemaker.pp
-index b8fa89f..bef0f4d 100644
+index 32fb841..7aa66c0 100644
 --- a/puppet/manifests/overcloud_controller_pacemaker.pp
 +++ b/puppet/manifests/overcloud_controller_pacemaker.pp
-@@ -699,6 +699,27 @@ if hiera('step') >= 3 {
+@@ -717,6 +717,27 @@ if hiera('step') >= 3 {
      }
    }
-
+ 
 +  if hiera('cinder_enable_dellsc_backend', false) {
 +    $cinder_dellsc_backend = hiera('cinder::backend::dellsc_iscsi::volume_backend_name')
 +
@@ -219,11 +220,11 @@ index b8fa89f..bef0f4d 100644
 +
    if hiera('cinder_enable_netapp_backend', false) {
      $cinder_netapp_backend = hiera('cinder::backend::netapp::title')
-
-@@ -752,7 +773,7 @@ if hiera('step') >= 3 {
+ 
+@@ -770,7 +791,7 @@ if hiera('step') >= 3 {
      }
    }
-
+ 
 -  $cinder_enabled_backends = delete_undef_values([$cinder_iscsi_backend, $cinder_rbd_backend, $cinder_netapp_backend, $cinder_nfs_backend])
 +  $cinder_enabled_backends = delete_undef_values([$cinder_iscsi_backend, $cinder_rbd_backend, $cinder_dellsc_backend, $cinder_netapp_backend, $cinder_nfs_backend])
    class { '::cinder::backends' :

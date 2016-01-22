@@ -1,0 +1,67 @@
+From db0715b247d5ae66d0e8ccb66d881cf605c88794 Mon Sep 17 00:00:00 2001
+From: Emilien Macchi <emilien@redhat.com>
+Date: Tue, 8 Dec 2015 20:36:41 -0500
+Subject: [PATCH] Fix nova.conf and neutron.conf to support Nova/Neutron
+ notifications
+
+- Default neutron.conf contains a parameter in [nova] section that is
+project_name, set to 'services'. We need to override it to 'service'.
+
+- in neutron.conf (for neutron-server on the controller), the auth_url SHOULD NOT have '/v2.0' at the end of the URL. It's documented here [1] and defaulted in Puppet Neutron module (OPM) [2] so
+we need to update THT to use the right URL.
+
+- in nova.conf (for nova-api on the controller), the admin_auth_url
+  SHOULD have '/v2.0' at the end of the URL. It's also documented on
+[1] and defaulted like this in Puppet [2].
+
+- We also need to drop %(tenant_id)s from nova_url which is useless (see
+doc [1]).
+
+[1] http://docs.openstack.org/kilo/install-guide/install/apt/content/neutron-controller-node.html
+[2] https://github.com/openstack/puppet-neutron/blob/master/manifests/server/notifications.pp#L128
+
+Note: nothing to do on the compute nodes, all happens on controllers.
+
+Change-Id: Iaf77b597016a6043b9f0fe2d46f870af1dbabe15
+(cherry picked from downstream commit ba1f1920b90c85e7bdc54867a4401282441a051b)
+Conflicts:
+	puppet/controller.yaml
+---
+ network/endpoints/endpoint_map.yaml | 2 +-
+ puppet/controller.yaml              | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/network/endpoints/endpoint_map.yaml b/network/endpoints/endpoint_map.yaml
+index 0521401..e6988c6 100644
+--- a/network/endpoints/endpoint_map.yaml
++++ b/network/endpoints/endpoint_map.yaml
+@@ -291,7 +291,7 @@ resources:
+       EndpointMap: { get_param: EndpointMap }
+       IP: {get_param: NovaApiVirtualIP}
+       CloudName: {get_param: CloudName}
+-      UriSuffix: '/v2/%(tenant_id)s'
++      UriSuffix: '/v2/'
+   NovaPublic:
+     type: OS::TripleO::Endpoint
+     properties:
+diff --git a/puppet/controller.yaml b/puppet/controller.yaml
+index f3934cd..f35ce01 100644
+--- a/puppet/controller.yaml
++++ b/puppet/controller.yaml
+@@ -952,7 +952,7 @@ resources:
+         neutron_internal_url: { get_param: [ EndpointMap, NeutronInternal, uri ] }
+         neutron_public_url: { get_param: [ EndpointMap, NeutronPublic, uri ] }
+         neutron_admin_url: { get_param: [ EndpointMap, NeutronAdmin, uri ] }
+-        neutron_admin_auth_url: { get_param: [ EndpointMap, KeystoneAdmin, uri ] }
++        neutron_admin_auth_url: { get_param: [ EndpointMap, KeystoneAdmin, uri_no_suffix ] }
+         ceilometer_backend: {get_param: CeilometerBackend}
+         ceilometer_metering_secret: {get_param: CeilometerMeteringSecret}
+         ceilometer_password: {get_param: CeilometerPassword}
+@@ -1257,6 +1257,7 @@ resources:
+                 neutron_dsn: {get_input: neutron_dsn}
+                 neutron::agents::metadata::auth_url: {get_input: keystone_identity_uri}
+                 neutron::db::mysql::password: {get_input: neutron_password}
++                neutron::server::notifications::project_name: 'service'
+ 
+                 # Ceilometer
+                 ceilometer_backend: {get_input: ceilometer_backend}

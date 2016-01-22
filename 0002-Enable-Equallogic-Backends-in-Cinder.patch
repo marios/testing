@@ -1,4 +1,4 @@
-From df7785dd9798d300c16e50772a573405c76b658b Mon Sep 17 00:00:00 2001
+From 9b0393608d22289d7616f179038b77088ae09f07 Mon Sep 17 00:00:00 2001
 From: rajinir <rajini_ram@dell.com>
 Date: Fri, 6 Nov 2015 15:28:16 -0600
 Subject: [PATCH] Enable Equallogic Backends in Cinder
@@ -9,10 +9,10 @@ This change adds all relevant parameters for:
  - Equallogic PS-Series (iSCSI)
 
 Change-Id: Ia0f71863cfb12f2cdda43dcf707a9a7145963001
-
 Conflicts:
 	puppet/manifests/overcloud_controller.pp
 	puppet/manifests/overcloud_controller_pacemaker.pp
+(cherry picked from downstream commit df7785dd9798d300c16e50772a573405c76b658b)
 ---
  environments/cinder-eqlx-config.yaml               | 17 +++++
  puppet/controller.yaml                             |  1 +
@@ -47,10 +47,10 @@ index 0000000..ca2c5e5
 +  CinderEqlxChapPassword: ''
 +  CinderEqlxUseChap: false
 diff --git a/puppet/controller.yaml b/puppet/controller.yaml
-index fc19f07..0520133 100644
+index 7328ffb..f3934cd 100644
 --- a/puppet/controller.yaml
 +++ b/puppet/controller.yaml
-@@ -990,6 +990,7 @@ resources:
+@@ -1060,6 +1060,7 @@ resources:
              - common
              - cinder_dellsc_data # Optionally provided by ControllerExtraConfigPre
              - cinder_netapp_data # Optionally provided by ControllerExtraConfigPre
@@ -151,13 +151,13 @@ index 0000000..c73608f
 +    description: Deployment reference, used to trigger puppet apply on changes
 +    value: {get_attr: [CinderEqlxDeployment, deploy_stdout]}
 diff --git a/puppet/manifests/overcloud_controller.pp b/puppet/manifests/overcloud_controller.pp
-index 68cde31..d0d2d97 100644
+index 434dbc7..bf36c44 100644
 --- a/puppet/manifests/overcloud_controller.pp
 +++ b/puppet/manifests/overcloud_controller.pp
-@@ -352,6 +352,27 @@ if hiera('step') >= 3 {
+@@ -368,6 +368,27 @@ if hiera('step') >= 3 {
      }
    }
-
+ 
 +  if hiera('cinder_enable_eqlx_backend', false) {
 +    $cinder_eqlx_backend = hiera('cinder::backend::eqlx::volume_backend_name')
 +
@@ -181,11 +181,11 @@ index 68cde31..d0d2d97 100644
 +
    if hiera('cinder_enable_netapp_backend', false) {
      $cinder_netapp_backend = hiera('cinder::backend::netapp::title')
-
-@@ -405,7 +426,8 @@ if hiera('step') >= 3 {
+ 
+@@ -421,7 +442,8 @@ if hiera('step') >= 3 {
      }
    }
-
+ 
 -  $cinder_enabled_backends = delete_undef_values([$cinder_iscsi_backend, $cinder_rbd_backend, $cinder_dellsc_backend, $cinder_netapp_backend, $cinder_nfs_backend])
 +  $cinder_enabled_backends = delete_undef_values([$cinder_iscsi_backend, $cinder_rbd_backend, $cinder_dellsc_backend, $cinder_eqlx_backend, $cinder_netapp_backend, $cinder_nfs_backend])
 +
@@ -193,13 +193,13 @@ index 68cde31..d0d2d97 100644
      enabled_backends => $cinder_enabled_backends,
    }
 diff --git a/puppet/manifests/overcloud_controller_pacemaker.pp b/puppet/manifests/overcloud_controller_pacemaker.pp
-index bef0f4d..cfe4ea4 100644
+index 7aa66c0..009813e 100644
 --- a/puppet/manifests/overcloud_controller_pacemaker.pp
 +++ b/puppet/manifests/overcloud_controller_pacemaker.pp
-@@ -720,6 +720,27 @@ if hiera('step') >= 3 {
+@@ -738,6 +738,27 @@ if hiera('step') >= 3 {
      }
    }
-
+ 
 +  if hiera('cinder_enable_eqlx_backend', false) {
 +    $cinder_eqlx_backend = hiera('cinder::backend::eqlx::volume_backend_name')
 +
@@ -223,11 +223,11 @@ index bef0f4d..cfe4ea4 100644
 +
    if hiera('cinder_enable_netapp_backend', false) {
      $cinder_netapp_backend = hiera('cinder::backend::netapp::title')
-
-@@ -773,7 +794,8 @@ if hiera('step') >= 3 {
+ 
+@@ -791,7 +812,8 @@ if hiera('step') >= 3 {
      }
    }
-
+ 
 -  $cinder_enabled_backends = delete_undef_values([$cinder_iscsi_backend, $cinder_rbd_backend, $cinder_dellsc_backend, $cinder_netapp_backend, $cinder_nfs_backend])
 +  $cinder_enabled_backends = delete_undef_values([$cinder_iscsi_backend, $cinder_rbd_backend, $cinder_dellsc_backend, $cinder_netapp_backend, $cinder_nfs_backend, $cinder_eqlx_backend])
 +

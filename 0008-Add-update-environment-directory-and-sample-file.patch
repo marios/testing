@@ -1,0 +1,50 @@
+From 3c8271a066c83af618ad02f953cf640858cad1cb Mon Sep 17 00:00:00 2001
+From: Giulio Fidente <gfidente@redhat.com>
+Date: Mon, 23 Nov 2015 14:28:40 +0100
+Subject: [PATCH] Add update environment directory and sample file
+
+This change adds an 'update' directory within 'environments' were we
+can store additional environment files to be optionally used for an
+update.
+
+Also adds an initial 'update-from-vip.yaml' and a README.md file
+documenting when is appropriate to use it.
+
+Change-Id: Ic28286f5d699d89de943585f5bc910eb91b7d573
+Resolves: rhbz#1272357
+(cherry picked from downstream commit 10861e04b1e00050578643cbc77f7963e4796fb0)
+Conflicts:
+	environments/updates/README.md
+---
+ environments/updates/README.md            | 4 +++-
+ environments/updates/update-from-vip.yaml | 7 +++++++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+ create mode 100644 environments/updates/update-from-vip.yaml
+
+diff --git a/environments/updates/README.md b/environments/updates/README.md
+index ceba1cd..05a9320 100644
+--- a/environments/updates/README.md
++++ b/environments/updates/README.md
+@@ -9,4 +9,6 @@ Contents
+   Internal API network.
+ 
+ **update-from-publicvip-on-ctlplane.yaml**
+-  To be used if the PublicVirtualIP resource was deployed as an additional VIP on the 'ctlplane'.
+\ No newline at end of file
++  To be used if the PublicVirtualIP resource was deployed as an additional VIP on the 'ctlplane'.
++**update-from-vip.yaml**
++  To be used if the VIP resources were mapped to VipPort (vip.yaml) during the initial Overcloud deployment.
+\ No newline at end of file
+diff --git a/environments/updates/update-from-vip.yaml b/environments/updates/update-from-vip.yaml
+new file mode 100644
+index 0000000..3b4b5ec
+--- /dev/null
++++ b/environments/updates/update-from-vip.yaml
+@@ -0,0 +1,7 @@
++resource_registry:
++  # Port assignments for the VIPs
++  OS::TripleO::Network::Ports::ExternalVipPort: ../../network/ports/vip.yaml
++  OS::TripleO::Network::Ports::InternalApiVipPort: ../../network/ports/vip.yaml
++  OS::TripleO::Network::Ports::StorageVipPort: ../../network/ports/vip.yaml
++  OS::TripleO::Network::Ports::StorageMgmtVipPort: ../../network/ports/vip.yaml
++  OS::TripleO::Network::Ports::TenantVipPort: ../../network/ports/vip.yaml
